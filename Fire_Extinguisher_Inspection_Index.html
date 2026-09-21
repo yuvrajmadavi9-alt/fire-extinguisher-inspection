@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Fire Inspection</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f4f6f8;
+      color: #222;
+    }
+
+    .header {
+      background: #b71c1c;
+      color: white;
+      padding: 18px;
+      text-align: center;
+    }
+
+    .header h2 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .header p {
+      margin: 6px 0 0;
+      font-size: 13px;
+    }
+
+    .container {
+      padding: 15px;
+      max-width: 600px;
+      margin: auto;
+    }
+
+    .card {
+      background: white;
+      padding: 16px;
+      margin-bottom: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      margin-bottom: 14px;
+      border: 1px solid #ccc;
+      border-radius: 7px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      background: #b71c1c;
+      color: white;
+      font-size: 17px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    .status {
+      padding: 10px;
+      border-radius: 7px;
+      margin-bottom: 15px;
+      background: #fff3cd;
+      color: #856404;
+      text-align: center;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="header">
+    <h2>🔥 Fire Extinguisher Inspection</h2>
+    <p>Monthly Inspection System</p>
+  </div>
+
+  <div class="container">
+
+    <div class="status" id="connectionStatus">
+      Checking connection...
+    </div>
+
+    <div class="card">
+
+      <label>Inspection Date</label>
+      <input type="date" id="inspectionDate">
+
+      <label>Asset No.</label>
+<input
+  type="text"
+  id="assetNo"
+  list="assetList"
+  placeholder="Search / Select Asset No."
+  autocomplete="off"
+>
+
+<datalist id="assetList"></datalist>
+
+<label>Location</label>
+<input
+  type="text"
+  id="location"
+  readonly
+>
+
+<label>Extinguisher Type</label>
+<input
+  type="text"
+  id="extinguisherType"
+  readonly
+>
+
+<label>Capacity</label>
+<input
+  type="text"
+  id="capacity"
+  readonly
+>
+<div style="display:flex;gap:10px;margin-bottom:15px;">
+
+  <button type="button"
+          onclick="markAllOK()"
+          style="flex:1;background:#198754;color:white;border:none;
+          padding:10px;border-radius:6px;font-weight:bold;">
+    ✓ ALL OK
+  </button>
+
+  <button type="button"
+          onclick="resetInspectionFields()"
+          style="flex:1;background:#6c757d;color:white;border:none;
+          padding:10px;border-radius:6px;font-weight:bold;">
+    ↺ RESET
+  </button>
+
+</div>
+      <label>Safety Pin</label>
+      <select id="safetyPin">
+        <option value="">Select</option>
+        <option value="OK">OK</option>
+        <option value="NOT OK">NOT OK</option>
+      </select>
+
+      <label>Discharge Hose</label>
+      <select id="dischargeHose">
+        <option value="">Select</option>
+        <option value="OK">OK</option>
+        <option value="NOT OK">NOT OK</option>
+      </select>
+
+      <label>Discharge Nozzle / Horn</label>
+      <select id="dischargeNozzle">
+        <option value="">Select</option>
+        <option value="OK">OK</option>
+        <option value="NOT OK">NOT OK</option>
+      </select>
+
+      <label>Pressure / Weight</label>
+      <select id="pressureWeight">
+        <option value="">Select</option>
+        <option value="OK">OK</option>
+        <option value="NOT OK">NOT OK</option>
+      </select>
+
+      <label>Cap Assembly</label>
+      <select id="capAssembly">
+        <option value="">Select</option>
+        <option value="OK">OK</option>
+        <option value="NOT OK">NOT OK</option>
+      </select>
+
+      <label>Inspection Sticker</label>
+      <select id="inspectionSticker">
+        <option value="">Select</option>
+        <option value="OK">OK</option>
+        <option value="NOT OK">NOT OK</option>
+      </select>
+
+      <label>Mfg. Year</label>
+      <input type="number" id="mfgYear">
+
+      <label>Hydro Test Due Year</label>
+      <input type="number" id="hydroTestDueYear">
+
+      <label>Inspection Photo</label>
+      <input type="file" id="inspectionPhoto" accept="image/*" capture="environment">
+
+      <label>Remarks</label>
+      <textarea id="remarks" rows="3"></textarea>
+
+      <button type="button" onclick="saveInspection()">
+  SAVE INSPECTION
+</button>
+
+    </div>
+
+  </div>
+
+</body>
+<script>
+
+  // Load asset list from Google Sheet
+  function loadAssets() {
+
+  google.script.run
+    .withSuccessHandler(function(assets) {
+
+      var assetList = document.getElementById("assetList");
+
+      assetList.innerHTML = "";
+
+      window.fireExtinguisherAssets = assets;
+
+      assets.forEach(function(asset) {
+
+        var option = document.createElement("option");
+
+        option.value =
+          asset.assetNo +
+          " | " +
+          asset.type +
+          " | " +
+          asset.capacity;
+
+        assetList.appendChild(option);
+
+      });
+
+    })
+    .withFailureHandler(function(error) {
+
+      console.error("Asset loading failed:", error);
+
+      document.getElementById("connectionStatus").innerText =
+        "Unable to load asset list";
+
+    })
+    .getInspectionAssets();
+}
+  // Load when app opens
+window.addEventListener("load", function() {
+
+  loadAssets();
+
+  if (navigator.onLine) {
+
+    document.getElementById(
+      "connectionStatus"
+    ).innerText =
+      "Internet connected";
+
+  } else {
+
+    document.getElementById(
+      "connectionStatus"
+    ).innerText =
+      "No internet connection - Offline mode";
+
+  }
+
+});
+
+// Show offline status
+window.addEventListener(
+  "offline",
+  function() {
+
+    document.getElementById(
+      "connectionStatus"
+    ).innerText =
+      "No internet connection - Offline mode";
+
+  }
+);
+// Auto-fill asset details when Asset No. is selected
+document.getElementById("assetNo").addEventListener("change", function() {
+
+  var selectedValue = this.value.trim();
+
+  var assets = window.fireExtinguisherAssets || [];
+
+  var selectedAsset = assets.find(function(asset) {
+
+    var optionValue =
+      asset.assetNo +
+      " | " +
+      asset.type +
+      " | " +
+      asset.capacity;
+
+    return optionValue === selectedValue;
+
+  });
+
+  if (!selectedAsset) {
+    return;
+  }
+
+  document.getElementById("location").value =
+    selectedAsset.location;
+
+  document.getElementById("extinguisherType").value =
+    selectedAsset.type;
+
+  document.getElementById("capacity").value =
+    selectedAsset.capacity;
+});
+function saveInspection() {
+
+  var photoInput = document.getElementById("inspectionPhoto");
+  var file = photoInput.files[0];
+var inspectionId =
+  "FI-" +
+  new Date().getTime() +
+  "-" +
+  document.getElementById("assetNo").value.split(" | ")[0];
+  var data = {
+    inspectionId: inspectionId,
+
+    inspectionDate:
+      document.getElementById("inspectionDate").value,
+
+    assetNo:
+      document.getElementById("assetNo").value,
+
+    location:
+      document.getElementById("location").value,
+
+    extinguisherType:
+      document.getElementById("extinguisherType").value,
+
+    capacity:
+      document.getElementById("capacity").value,
+
+    safetyPin:
+      document.getElementById("safetyPin").value,
+
+    dischargeHose:
+      document.getElementById("dischargeHose").value,
+
+    dischargeNozzle:
+      document.getElementById("dischargeNozzle").value,
+
+    pressureWeight:
+      document.getElementById("pressureWeight").value,
+
+    capAssembly:
+      document.getElementById("capAssembly").value,
+
+    inspectionSticker:
+      document.getElementById("inspectionSticker").value,
+
+    mfgYear:
+      document.getElementById("mfgYear").value,
+
+    hydroTestDueYear:
+      document.getElementById("hydroTestDueYear").value,
+
+    remarks:
+      document.getElementById("remarks").value,
+
+    checkedBy: "",
+
+    photo: ""
+  };
+
+  // No photo selected
+  if (!file) {
+    sendInspectionData(data);
+    return;
+  }
+
+  // Read photo
+  var reader = new FileReader();
+
+  reader.onload = function(e) {
+
+    data.photo = e.target.result;
+
+    sendInspectionData(data);
+  };
+
+  reader.onerror = function() {
+
+    alert("Unable to read inspection photo.");
+
+  };
+
+  reader.readAsDataURL(file);
+}
+
+
+// ==========================================
+// SEND DATA TO GOOGLE APPS SCRIPT
+// ==========================================
+// ==========================================
+// OFFLINE INSPECTION STORAGE
+// ==========================================
+
+var offlineDB;
+
+function openOfflineDB() {
+
+  return new Promise(function(resolve, reject) {
+
+    var request = indexedDB.open("FireInspectionDB", 1);
+
+    request.onupgradeneeded = function(event) {
+
+      var db = event.target.result;
+
+      if (!db.objectStoreNames.contains("pendingInspections")) {
+
+        db.createObjectStore(
+          "pendingInspections",
+          { keyPath: "inspectionId" }
+        );
+
+      }
+
+    };
+
+    request.onsuccess = function(event) {
+
+      offlineDB = event.target.result;
+
+      resolve(offlineDB);
+
+    };
+
+    request.onerror = function() {
+
+      reject(request.error);
+
+    };
+
+  });
+
+}
+
+
+// Save inspection locally
+function saveInspectionOffline(data) {
+
+  return openOfflineDB().then(function(db) {
+
+    return new Promise(function(resolve, reject) {
+
+      var transaction =
+        db.transaction(
+          ["pendingInspections"],
+          "readwrite"
+        );
+
+      var store =
+        transaction.objectStore(
+          "pendingInspections"
+        );
+
+      var request =
+        store.put(data);
+
+      request.onsuccess = function() {
+
+        resolve();
+
+      };
+
+      request.onerror = function() {
+
+        reject(request.error);
+
+      };
+
+    });
+
+  });
+
+}
+// ==========================================
+// AUTO SYNC OFFLINE INSPECTIONS
+// ==========================================
+
+function syncOfflineInspections() {
+
+  if (!navigator.onLine) {
+    return;
+  }
+
+  openOfflineDB().then(function(db) {
+
+    var transaction =
+      db.transaction(
+        ["pendingInspections"],
+        "readonly"
+      );
+
+    var store =
+      transaction.objectStore(
+        "pendingInspections"
+      );
+
+    var request = store.getAll();
+
+    request.onsuccess = function() {
+
+      var inspections = request.result || [];
+
+      if (inspections.length === 0) {
+        return;
+      }
+
+      inspections.forEach(function(data) {
+
+        google.script.run
+
+          .withSuccessHandler(function(message) {
+
+            deleteOfflineInspection(
+              data.inspectionId
+            );
+
+          })
+
+          .withFailureHandler(function(error) {
+
+            console.log(
+              "Offline inspection sync failed:",
+              error.message
+            );
+
+          })
+
+          .saveInspectionFromWebApp(data);
+
+      });
+
+    };
+
+  }).catch(function(error) {
+
+    console.log(
+      "Offline database error:",
+      error.message
+    );
+
+  });
+
+}
+
+
+// ==========================================
+// DELETE SYNCED OFFLINE INSPECTION
+// ==========================================
+
+function deleteOfflineInspection(inspectionId) {
+
+  openOfflineDB().then(function(db) {
+
+    var transaction =
+      db.transaction(
+        ["pendingInspections"],
+        "readwrite"
+      );
+
+    var store =
+      transaction.objectStore(
+        "pendingInspections"
+      );
+
+    store.delete(inspectionId);
+
+  });
+
+}
+// ==========================================
+// AUTO SYNC WHEN INTERNET RETURNS
+// ==========================================
+
+window.addEventListener(
+  "online",
+  function() {
+
+    document.getElementById(
+      "connectionStatus"
+    ).innerText =
+      "Internet connected - Syncing...";
+
+    syncOfflineInspections();
+
+  }
+);
+// ==========================================
+// RESET FORM FOR NEXT INSPECTION
+// ==========================================
+function resetInspectionForm() {
+
+  document.getElementById("inspectionDate").value =
+    new Date().toISOString().split("T")[0];
+
+  document.getElementById("assetNo").value = "";
+  document.getElementById("location").value = "";
+  document.getElementById("extinguisherType").value = "";
+  document.getElementById("capacity").value = "";
+
+  document.getElementById("safetyPin").value = "";
+  document.getElementById("dischargeHose").value = "";
+  document.getElementById("dischargeNozzle").value = "";
+  document.getElementById("pressureWeight").value = "";
+  document.getElementById("capAssembly").value = "";
+  document.getElementById("inspectionSticker").value = "";
+
+  document.getElementById("mfgYear").value = "";
+  document.getElementById("hydroTestDueYear").value = "";
+
+  document.getElementById("inspectionPhoto").value = "";
+  document.getElementById("remarks").value = "";
+
+}
+function sendInspectionData(data) {
+
+  // Internet available
+  if (navigator.onLine) {
+
+    google.script.run
+
+      .withSuccessHandler(function(message) {
+
+        alert(message);
+
+        resetInspectionForm();
+
+      })
+
+      .withFailureHandler(function(error) {
+
+        // If online save fails, store locally
+        saveInspectionOffline(data)
+          .then(function() {
+
+            alert(
+              "Internet connection/problem detected.\n\n" +
+              "Inspection saved OFFLINE.\n" +
+              "It will sync when internet is available."
+            );
+
+            resetInspectionForm();
+
+          })
+
+          .catch(function(dbError) {
+
+            alert(
+              "Save failed and offline storage also failed: " +
+              dbError.message
+            );
+
+          });
+
+      })
+
+      .saveInspectionFromWebApp(data);
+
+  }
+
+  // No internet
+  else {
+
+    saveInspectionOffline(data)
+
+      .then(function() {
+
+        alert(
+          "No internet connection.\n\n" +
+          "Inspection saved OFFLINE.\n" +
+          "It will sync automatically when internet is available."
+        );
+
+        resetInspectionForm();
+
+      })
+
+      .catch(function(error) {
+
+        alert(
+          "Unable to save inspection offline: " +
+          error.message
+        );
+
+      });
+
+  }
+
+}
+function markAllOK() {
+
+  var fields = [
+    "safetyPin",
+    "dischargeHose",
+    "dischargeNozzle",
+    "pressureWeight",
+    "capAssembly",
+    "inspectionSticker"
+  ];
+
+  fields.forEach(function(id) {
+
+    var select = document.getElementById(id);
+
+    if (!select) return;
+
+    for (var i = 0; i < select.options.length; i++) {
+
+      if (select.options[i].text.trim().toUpperCase() === "OK") {
+        select.selectedIndex = i;
+        break;
+      }
+
+    }
+
+  });
+
+}
+
+function resetInspectionFields() {
+
+  var fields = [
+    "safetyPin",
+    "dischargeHose",
+    "dischargeNozzle",
+    "pressureWeight",
+    "capAssembly",
+    "inspectionSticker"
+  ];
+
+  fields.forEach(function(id) {
+
+    var select = document.getElementById(id);
+
+    if (!select) return;
+
+    select.selectedIndex = 0;
+
+  });
+
+}
+</script>
+</html>

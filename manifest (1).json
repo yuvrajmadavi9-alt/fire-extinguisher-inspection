@@ -1,0 +1,9 @@
+{
+  "name": "Fire Extinguisher Inspection",
+  "short_name": "Fire Inspection",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f4f6f8",
+  "theme_color": "#b71c1c",
+  "description": "Fire Extinguisher Monthly Inspection System"
+}
